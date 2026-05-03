@@ -10,8 +10,8 @@ A production-ready Machine Learning pipeline that predicts heart disease using c
 ---
 
 ## 🚀 Live Demo
-> API running locally at `http://127.0.0.1:8000/docs`
+> API live at: https://heart-disease-api-kxv1.onrender.com/docs
 
----
+--- 
 
 ## 📊 Project Architecture
