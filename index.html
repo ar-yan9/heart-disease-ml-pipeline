@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Heart Disease Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #e63946;
+      --dark:   #0d0d0d;
+      --card:   #141414;
+      --border: #2a2a2a;
+      --muted:  #555;
+      --text:   #e8e0d5;
+      --cream:  #f5efe6;
+      --green:  #2ecc71;
+      --yellow: #f39c12;
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background pulse */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(230,57,70,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.6; }
+      50%       { transform: translateX(-50%) scale(1.15); opacity: 1; }
+    }
+
+    /* Hero */
+    header {
+      text-align: center;
+      padding: 80px 20px 50px;
+      position: relative;
+    }
+    .heartbeat-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .heartbeat-line svg {
+      width: 180px; height: 40px;
+      stroke: var(--red);
+      fill: none;
+      stroke-width: 2.5;
+      stroke-dasharray: 500;
+      stroke-dashoffset: 500;
+      animation: draw 2s ease forwards 0.3s;
+    }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    .heart-icon {
+      font-size: 2rem;
+      animation: heartbeat 1.2s ease-in-out infinite;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      14%       { transform: scale(1.2); }
+      28%       { transform: scale(1); }
+      42%       { transform: scale(1.15); }
+      70%       { transform: scale(1); }
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 1.1;
+      color: var(--cream);
+      margin-bottom: 16px;
+      animation: fadeUp 0.8s ease forwards;
+      opacity: 0;
+    }
+    h1 span { color: var(--red); font-style: italic; }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 300;
+      letter-spacing: 0.5px;
+      animation: fadeUp 0.8s ease forwards 0.2s;
+      opacity: 0;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      padding: 30px 20px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 auto 60px;
+      max-width: 800px;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+      opacity: 0;
+    }
+    .stat { text-align: center; }
+    .stat-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.8rem;
+      color: var(--red);
+      font-weight: 500;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
+    }
+
+    /* Main layout */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      align-items: start;
+    }
+    @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      animation: fadeUp 0.8s ease forwards 0.5s;
+      opacity: 0;
+    }
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      color: var(--cream);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Form fields */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .field input, .field select {
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(230,57,70,0.1);
+    }
+    .field select option { background: #1a1a1a; }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      margin-top: 24px;
+      padding: 16px;
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover {
+      background: #c1121f;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(230,57,70,0.35);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn.loading { opacity: 0.7; pointer-events: none; }
+
+    /* Result card */
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      animation: fadeUp 0.8s ease forwards 0.6s;
+      opacity: 0;
+    }
+
+    .result-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      color: var(--muted);
+      text-align: center;
+      gap: 12px;
+    }
+    .result-placeholder .icon { font-size: 3rem; opacity: 0.3; }
+    .result-placeholder p { font-size: 0.9rem; line-height: 1.6; }
+
+    /* Result display */
+    .result-display { display: none; }
+    .result-display.show { display: block; }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 20px;
+    }
+    .risk-high   { background: rgba(230,57,70,0.15); color: var(--red); border: 1px solid rgba(230,57,70,0.3); }
+    .risk-medium { background: rgba(243,156,18,0.15); color: var(--yellow); border: 1px solid rgba(243,156,18,0.3); }
+    .risk-low    { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+
+    .result-label {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--cream);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    /* Confidence bar */
+    .confidence-section { margin-top: 28px; }
+    .confidence-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .confidence-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+    .confidence-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--cream);
+      font-weight: 500;
+    }
+    .bar-track {
+      height: 6px;
+      background: #222;
+      border-radius: 100px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+    .bar-red    { background: linear-gradient(90deg, #c1121f, var(--red)); }
+    .bar-yellow { background: linear-gradient(90deg, #d68910, var(--yellow)); }
+    .bar-green  { background: linear-gradient(90deg, #27ae60, var(--green)); }
+
+    /* Info rows */
+    .info-rows { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .info-key { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .info-val { font-family: 'DM Mono', monospace; font-size: 0.9rem; color: var(--text); }
+
+    /* Quick fill buttons */
+    .quick-fill {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      padding: 7px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Outfit', sans-serif;
+    }
+    .quick-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 30px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+    footer a { color: var(--red); text-decoration: none; }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-msg {
+      background: rgba(230,57,70,0.1);
+      border: 1px solid rgba(230,57,70,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-top: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="heartbeat-line">
+    <svg viewBox="0 0 180 40">
+      <polyline points="0,20 30,20 45,5 55,35 65,5 75,35 85,20 120,20 130,10 140,30 150,20 180,20"/>
+    </svg>
+    <span class="heart-icon">❤️</span>
+    <svg viewBox="0 0 180 40" style="transform:scaleX(-1)">
+      <polyline points="0,20 30,20 45,5 55,35 65,5 75,35 85,20 120,20 130,10 140,30 150,20 180,20"/>
+    </svg>
+  </div>
+  <h1>Heart Disease<br/><span>Predictor</span></h1>
+  <p class="subtitle">ML-powered clinical risk assessment · Random Forest · 83.6% accuracy</p>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-value">83.6%</div>
+    <div class="stat-label">Accuracy</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">86.5%</div>
+    <div class="stat-label">F1 Score</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">303</div>
+    <div class="stat-label">Training Samples</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">13</div>
+    <div class="stat-label">Features</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Form Card -->
+  <div class="card">
+    <div class="card-title">Patient Data</div>
+
+    <div class="quick-fill">
+      <button class="quick-btn" onclick="fillHighRisk()">⚠ High Risk Example</button>
+      <button class="quick-btn" onclick="fillLowRisk()">✓ Low Risk Example</button>
+      <button class="quick-btn" onclick="clearForm()">✕ Clear</button>
+    </div>
+
+    <div class="fields-grid">
+      <div class="field">
+        <label>Age (years)</label>
+        <input type="number" id="age" placeholder="e.g. 52" min="1" max="120"/>
+      </div>
+      <div class="field">
+        <label>Sex</label>
+        <select id="sex">
+          <option value="">Select</option>
+          <option value="1">Male</option>
+          <option value="0">Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Chest Pain Type</label>
+        <select id="cp">
+          <option value="">Select</option>
+          <option value="0">Typical Angina</option>
+          <option value="1">Atypical Angina</option>
+          <option value="2">Non-anginal Pain</option>
+          <option value="3">Asymptomatic</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Resting BP (mmHg)</label>
+        <input type="number" id="trestbps" placeholder="e.g. 120"/>
+      </div>
+      <div class="field">
+        <label>Cholesterol (mg/dl)</label>
+        <input type="number" id="chol" placeholder="e.g. 200"/>
+      </div>
+      <div class="field">
+        <label>Fasting Blood Sugar</label>
+        <select id="fbs">
+          <option value="">Select</option>
+          <option value="0">≤ 120 mg/dl</option>
+          <option value="1">> 120 mg/dl</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Resting ECG</label>
+        <select id="restecg">
+          <option value="">Select</option>
+          <option value="0">Normal</option>
+          <option value="1">ST-T Abnormality</option>
+          <option value="2">LV Hypertrophy</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max Heart Rate</label>
+        <input type="number" id="thalach" placeholder="e.g. 150"/>
+      </div>
+      <div class="field">
+        <label>Exercise Angina</label>
+        <select id="exang">
+          <option value="">Select</option>
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>ST Depression</label>
+        <input type="number" id="oldpeak" placeholder="e.g. 1.0" step="0.1"/>
+      </div>
+      <div class="field">
+        <label>ST Slope</label>
+        <select id="slope">
+          <option value="">Select</option>
+          <option value="0">Upsloping</option>
+          <option value="1">Flat</option>
+          <option value="2">Downsloping</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Major Vessels (0-3)</label>
+        <select id="ca">
+          <option value="">Select</option>
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label>Thalassemia</label>
+        <select id="thal">
+          <option value="">Select</option>
+          <option value="1">Normal</option>
+          <option value="2">Fixed Defect</option>
+          <option value="3">Reversible Defect</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn" id="predictBtn" onclick="predict()">
+      <span id="btnText">Analyze Risk</span>
+    </button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result-card">
+    <div class="card-title">Analysis Result</div>
+
+    <div class="result-placeholder" id="placeholder">
+      <div class="icon">🫀</div>
+      <p>Fill in the patient data and<br/>click <strong>Analyze Risk</strong> to get<br/>a prediction.</p>
+    </div>
+
+    <div class="result-display" id="resultDisplay">
+      <div class="risk-badge" id="riskBadge"></div>
+      <div class="result-label" id="resultLabel"></div>
+
+      <div class="confidence-section">
+        <div class="confidence-header">
+          <span class="confidence-label">Confidence Score</span>
+          <span class="confidence-value" id="confidenceVal">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" id="barFill"></div>
+        </div>
+      </div>
+
+      <div class="info-rows">
+        <div class="info-row">
+          <span class="info-key">Prediction</span>
+          <span class="info-val" id="predictionVal">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Risk Level</span>
+          <span class="info-val" id="riskVal">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Model</span>
+          <span class="info-val">Random Forest</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">API Status</span>
+          <span class="info-val" style="color: var(--green);">● Live</span>
+        </div>
+      </div>
+
+      <p style="margin-top: 20px; font-size: 0.75rem; color: var(--muted); line-height: 1.6;">
+        ⚠ This tool is for educational purposes only and should not replace professional medical advice.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Built by <a href="https://github.com/ar-yan9" target="_blank">@ar-yan9</a> ·
+  <a href="https://heart-disease-api-kxv1.onrender.com/docs" target="_blank">API Docs</a> ·
+  <a href="https://github.com/ar-yan9/heart-disease-ml-pipeline" target="_blank">GitHub</a>
+</footer>
+
+<script>
+  const API = 'https://heart-disease-api-kxv1.onrender.com';
+
+  function fillHighRisk() {
+    document.getElementById('age').value = 63;
+    document.getElementById('sex').value = 1;
+    document.getElementById('cp').value = 3;
+    document.getElementById('trestbps').value = 145;
+    document.getElementById('chol').value = 233;
+    document.getElementById('fbs').value = 1;
+    document.getElementById('restecg').value = 0;
+    document.getElementById('thalach').value = 150;
+    document.getElementById('exang').value = 0;
+    document.getElementById('oldpeak').value = 2.3;
+    document.getElementById('slope').value = 0;
+    document.getElementById('ca').value = 0;
+    document.getElementById('thal').value = 1;
+  }
+
+  function fillLowRisk() {
+    document.getElementById('age').value = 35;
+    document.getElementById('sex').value = 0;
+    document.getElementById('cp').value = 1;
+    document.getElementById('trestbps').value = 120;
+    document.getElementById('chol').value = 180;
+    document.getElementById('fbs').value = 0;
+    document.getElementById('restecg').value = 1;
+    document.getElementById('thalach').value = 170;
+    document.getElementById('exang').value = 0;
+    document.getElementById('oldpeak').value = 0.0;
+    document.getElementById('slope').value = 2;
+    document.getElementById('ca').value = 0;
+    document.getElementById('thal').value = 2;
+  }
+
+  function clearForm() {
+    ['age','trestbps','chol','thalach','oldpeak'].forEach(id => document.getElementById(id).value = '');
+    ['sex','cp','fbs','restecg','exang','slope','ca','thal'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('placeholder').style.display = 'flex';
+    document.getElementById('resultDisplay').classList.remove('show');
+  }
+
+  async function predict() {
+    const fields = ['age','sex','cp','trestbps','chol','fbs','restecg','thalach','exang','oldpeak','slope','ca','thal'];
+    const data = {};
+    for (const f of fields) {
+      const val = document.getElementById(f).value;
+      if (val === '' || val === null) {
+        showError('Please fill in all fields.');
+        return;
+      }
+      data[f] = parseFloat(val);
+    }
+
+    hideError();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+
+      if (json.error) { showError(json.error); setLoading(false); return; }
+
+      showResult(json);
+    } catch (e) {
+      showError('Could not reach the API. Make sure it is running.');
+    }
+
+    setLoading(false);
+  }
+
+  function showResult(json) {
+    document.getElementById('placeholder').style.display = 'none';
+    const display = document.getElementById('resultDisplay');
+    display.classList.add('show');
+
+    const isDisease = json.prediction === 1;
+    const risk = json.risk_level;
+    const conf = parseFloat(json.confidence);
+
+    // Badge
+    const badge = document.getElementById('riskBadge');
+    badge.className = 'risk-badge';
+    if (risk === 'High')   { badge.classList.add('risk-high');   badge.textContent = '⚠ High Risk'; }
+    if (risk === 'Medium') { badge.classList.add('risk-medium'); badge.textContent = '◈ Medium Risk'; }
+    if (risk === 'Low')    { badge.classList.add('risk-low');    badge.textContent = '✓ Low Risk'; }
+
+    // Label
+    document.getElementById('resultLabel').textContent = json.label;
+
+    // Confidence bar
+    document.getElementById('confidenceVal').textContent = json.confidence;
+    const bar = document.getElementById('barFill');
+    bar.className = 'bar-fill';
+    if (risk === 'High')   bar.classList.add('bar-red');
+    if (risk === 'Medium') bar.classList.add('bar-yellow');
+    if (risk === 'Low')    bar.classList.add('bar-green');
+    setTimeout(() => bar.style.width = conf + '%', 100);
+
+    // Info rows
+    document.getElementById('predictionVal').textContent = isDisease ? 'Disease Detected (1)' : 'No Disease (0)';
+    document.getElementById('riskVal').textContent = risk;
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('predictBtn');
+    const txt = document.getElementById('btnText');
+    if (on) {
+      btn.classList.add('loading');
+      txt.innerHTML = '<div class="spinner"></div> Analyzing...';
+    } else {
+      btn.classList.remove('loading');
+      txt.textContent = 'Analyze Risk';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideError() {
+    document.getElementById('errorMsg').style.display = 'none';
+  }
+</script>
+</body>
+</html>
