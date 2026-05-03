@@ -10,8 +10,6 @@ A production-ready Machine Learning pipeline that predicts heart disease using c
 ---
 
 ## 🚀 Live Demo
-> API live at: https://heart-disease-api-kxv1.onrender.com/docs
+> API live at: https://ar-yan9.github.io/heart-disease-ml-pipeline/
 
 --- 
-
-## 📊 Project Architecture
