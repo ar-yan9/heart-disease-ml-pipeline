@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import numpy as np
@@ -10,7 +11,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Load models
+# Fix CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 preprocessor = joblib.load(BASE_DIR / "models" / "preprocessor.pkl")
 model        = joblib.load(BASE_DIR / "models" / "best_model.pkl")
@@ -54,7 +63,6 @@ def predict(data: PatientData):
             data.chol, data.fbs, data.restecg, data.thalach,
             data.exang, data.oldpeak, data.slope, data.ca, data.thal
         ]])
-
         processed   = preprocessor.transform(features)
         prediction  = model.predict(processed)[0]
         probability = model.predict_proba(processed)[0][1]
@@ -65,7 +73,6 @@ def predict(data: PatientData):
             "confidence":  f"{round(float(probability) * 100, 2)}%",
             "risk_level":  "High" if probability > 0.7 else "Medium" if probability > 0.4 else "Low"
         }
-
     except Exception as e:
         return {"error": str(e)}
 
